@@ -35,16 +35,20 @@ To install Google Drive Duplicate Files Remover, follow these steps:
 ```shell
 git clone git@github.com:TimeInvestor/gdrive-duplicate-remover.git
 ```
+**Install required Python libraries**
+```shell
+pip install google-api-python-client
+```
 
-## Using <project_name>
+## Using Google Drive Duplicate Files Remover
 
 To use Google Drive Duplicate Files Remover, follow these steps:
 
 ```shell
 # Go to code folder
-cd <path to  gdrive-duplicate-remover>
+cd <path to gdrive-duplicate-remover>
 # Run the main script
-Python main.py
+python main.py
 ```
 
 ## Contributing to Google Drive Duplicate Files Remover
