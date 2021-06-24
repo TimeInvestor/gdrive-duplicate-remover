@@ -7,40 +7,18 @@ from google.oauth2.credentials import Credentials
 from datetime import datetime
 
 # If modifying these scopes, delete the file token.json.
-# SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 
 def main():
-    """Shows basic usage of the Drive v3 API.
-    Prints the names and ids of the first 10 files the user has access to.
-    """
-    creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
-
-    service = build('drive', 'v3', credentials=creds)
+    api_client = get_gdrive_api_client()
 
     # Call the Drive v3 API to get list of files
     # Note: there is no `size` in response for folders
     next_page_token = None
     hash_map = {}
     while True:
-        results = service.files().list(
+        results = api_client.files().list(
             q="mimeType!='application/vnd.google-apps.folder' and "
               "mimeType!='application/vnd.google-apps.spreadsheet' and "
               "mimeType!='application/vnd.google-apps.presentation' and "
@@ -129,13 +107,39 @@ def main():
                     print('>>> Trash file: {}'.format(file))
                     trashed_files_log.write(log_str)
 
-                    results = service.files().update(fileId=file['id'],
+                    results = api_client.files().update(fileId=file['id'],
                                                      body={'trashed': True}
                                                      ).execute()
                     print('>>> Trash file result: {}'.format(results))
     # Close file resources
     to_trash_files_log.close()
     trashed_files_log.close()
+
+
+def get_gdrive_api_client():
+    """This function takes Google Developer App client secrets from a file
+    `credentials.json`, kicks off authorization flow, and creates a `service`
+    object for Google Drive API.
+    """
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+    service = build('drive', 'v3', credentials=creds)
+    return service
 
 
 if __name__ == '__main__':
