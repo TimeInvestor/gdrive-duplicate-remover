@@ -8,7 +8,7 @@ Your data is totally safe because
  - it uses soft deletion which means it trashes duplicate files instead of deleting them permanently.
 
 > Note:
->  - If you need to delete the trashed files and release Google Drive space immediately, login to your Google Drive, go to `Bin` and empty bin.
+>  - If you need to delete the trashed files and release Google Drive space immediately, login to your Google Drive, go to `Bin`, and delete selected files or empty entire bin.
 >  - You need to refresh the browser page to see any change in Google Drive storage space.
 
 ## Prerequisite: Google Account Setup
