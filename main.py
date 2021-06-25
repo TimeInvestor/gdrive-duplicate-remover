@@ -9,16 +9,22 @@ from datetime import datetime
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
+MAX_PAGE_SIZE = 1000
+FILE_FIELDS = "name, modifiedTime, id, trashed, ownedByMe, md5Checksum"
+
+# For log file naming
+date = datetime.now().strftime("%Y_%m_%d-%I_%M_%S%p")
+
 
 def main():
     api_client = get_gdrive_api_client()
 
     # Call the Drive v3 API to get list of files
-    # Note: there is no `size` in response for folders
     next_page_token = None
-    hash_map = {}
+    hash_map = {}  # for storing all retrieved files
     while True:
         results = api_client.files().list(
+            # Exclude files without md5Checksum
             q="mimeType!='application/vnd.google-apps.folder' and "
               "mimeType!='application/vnd.google-apps.spreadsheet' and "
               "mimeType!='application/vnd.google-apps.presentation' and "
@@ -30,10 +36,9 @@ def main():
               "mimeType!='application/vnd.google-apps.drawing' and "
               "mimeType!='application/vnd.google-apps.jam' and "
               "trashed=false",
-            pageSize=1000,
+            pageSize=MAX_PAGE_SIZE,
             pageToken=next_page_token,
-            fields="nextPageToken, files(name, modifiedTime, id, trashed, "
-                   "ownedByMe, md5Checksum)"
+            fields=f"nextPageToken, files({FILE_FIELDS})"
         ).execute()
 
         next_page_token = results.get('nextPageToken', None)
@@ -56,9 +61,6 @@ def main():
             break
 
     print(f'>>> Total number of md5Checksum entries: {len(hash_map)}')
-
-    # For log files naming
-    date = datetime.now().strftime("%Y_%m_%d-%I_%M_%S%p")
 
     # Log candidate files to a file
     with open(f'candidate_files-{date}.log', 'w') as log_file:
