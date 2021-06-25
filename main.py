@@ -1,10 +1,15 @@
 from __future__ import print_function
+
+import json
+import logging
 import os.path
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
+from datetime import datetime
+from logging.config import dictConfig
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from datetime import datetime
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -14,6 +19,8 @@ FILE_FIELDS = "name, modifiedTime, id, trashed, ownedByMe, md5Checksum"
 
 # For log file naming
 date = datetime.now().strftime("%Y_%m_%d-%I_%M_%S%p")
+
+LOGGER_NAME = 'GDrive Duplicate Remover'
 
 
 def main():
@@ -42,10 +49,10 @@ def main():
         ).execute()
 
         next_page_token = results.get('nextPageToken', None)
-        print(f'>>> next_page_token: {next_page_token}')
+        logger.info(f'next_page_token: {next_page_token}')
         files = results.get('files', [])
         if not files:
-            print('No files found.')
+            logger.info('No files found.')
         else:
             for file in files:
                 if(file.get('md5Checksum') is not None and
@@ -60,7 +67,7 @@ def main():
         if next_page_token is None:
             break
 
-    print(f'>>> Total number of md5Checksum entries: {len(hash_map)}')
+    logger.info(f'Total number of md5Checksum entries: {len(hash_map)}')
 
     # Log candidate files to a file
     with open(f'candidate_files-{date}.log', 'w') as log_file:
@@ -106,13 +113,13 @@ def main():
                            f"\n")
                 to_trash_files_log.write(log_str)
                 if file['trashed'] is True:
-                    print('>>> Trash file: {}'.format(file))
+                    logger.info(f'Trash file: {file}')
                     trashed_files_log.write(log_str)
 
                     results = api_client.files().update(fileId=file['id'],
                                                      body={'trashed': True}
                                                      ).execute()
-                    print('>>> Trash file result: {}'.format(results))
+                    logger.info(f'Trash file result: {results}')
     # Close file resources
     to_trash_files_log.close()
     trashed_files_log.close()
@@ -145,4 +152,10 @@ def get_gdrive_api_client():
 
 
 if __name__ == '__main__':
+    # Config logging
+    with open('logging_config.json', 'r') as logging_config_file:
+        logging_config = json.load(logging_config_file)
+        dictConfig(logging_config)
+    logger = logging.getLogger(LOGGER_NAME)
+
     main()

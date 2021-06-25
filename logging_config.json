@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "disable_existing_loggers": true,
+    "formatters": {
+        "standard": {
+            "class": "logging.Formatter",
+            "style": "{",
+            "format": "{asctime:s} | {name:s} | {levelname:s} | {message:s}"
+        }
+    },
+    "handlers": {
+        "console":{
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+            "stream" : "ext://sys.stdout"
+        },
+        "file_handler": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "formatter": "standard",
+            "filename": "logs/application.log",
+            "mode": "a",
+            "encoding": "utf-8"
+        }
+    },
+    "loggers": { },
+    "root": {
+        "handlers": ["console", "file_handler"],
+        "level": "INFO"
+    }
+}
