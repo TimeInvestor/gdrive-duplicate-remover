@@ -45,7 +45,7 @@ def main():
                                f"- ownedByMe: {file['ownedByMe']} "
                                f"- trashed: {file['trashed']} "
                                f"- md5Checksum: {file['md5Checksum']}\n")
-
+    
     # Loop through the hash map
     # For each file list under a md5Checksum,
     #   if num of files > 1,
