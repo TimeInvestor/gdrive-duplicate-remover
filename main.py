@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import json
 import logging
-import os.path
+import os
 from datetime import datetime
 from logging.config import dictConfig
 
@@ -17,8 +17,9 @@ SCOPES = ['https://www.googleapis.com/auth/drive']
 MAX_PAGE_SIZE = 1000
 FILE_FIELDS = "name, modifiedTime, id, trashed, ownedByMe, md5Checksum"
 
-# For log file naming
+# For application data log file naming
 date = datetime.now().strftime("%Y_%m_%d-%I_%M_%S%p")
+APP_DATA_LOG_FOLDER = 'app_data_logs'
 
 LOGGER_NAME = 'GDrive Duplicate Remover'
 
@@ -27,50 +28,14 @@ def main():
     api_client = get_gdrive_api_client()
 
     # Call the Drive v3 API to get list of files
-    next_page_token = None
-    hash_map = {}  # for storing all retrieved files
-    while True:
-        results = api_client.files().list(
-            # Exclude files without md5Checksum
-            q="mimeType!='application/vnd.google-apps.folder' and "
-              "mimeType!='application/vnd.google-apps.spreadsheet' and "
-              "mimeType!='application/vnd.google-apps.presentation' and "
-              "mimeType!='application/vnd.google-apps.document' and "
-              "mimeType!='application/vnd.google-apps.form' and "
-              "mimeType!='application/vnd.google-apps.drive-sdk.810194666617' and "
-              "mimeType!='application/vnd.google-apps.site' and "
-              "mimeType!='application/vnd.google-apps.earth' and "
-              "mimeType!='application/vnd.google-apps.drawing' and "
-              "mimeType!='application/vnd.google-apps.jam' and "
-              "trashed=false",
-            pageSize=MAX_PAGE_SIZE,
-            pageToken=next_page_token,
-            fields=f"nextPageToken, files({FILE_FIELDS})"
-        ).execute()
-
-        next_page_token = results.get('nextPageToken', None)
-        logger.info(f'next_page_token: {next_page_token}')
-        files = results.get('files', [])
-        if not files:
-            logger.info('No files found.')
-        else:
-            for file in files:
-                if(file.get('md5Checksum') is not None and
-                        file.get('trashed') is False and
-                        file.get('ownedByMe') is True):
-                    md5_checksum = file['md5Checksum']
-                    file_list = hash_map.get(md5_checksum)
-                    if file_list is None:
-                        hash_map[md5_checksum] = [file]
-                    else:
-                        file_list.append(file)
-        if next_page_token is None:
-            break
+    hash_map = fetch_gdrive_files(api_client)
 
     logger.info(f'Total number of md5Checksum entries: {len(hash_map)}')
 
     # Log candidate files to a file
-    with open(f'candidate_files-{date}.log', 'w') as log_file:
+    logfile = os.path.join(APP_DATA_LOG_FOLDER, f'candidate_files-{date}.log')
+    os.makedirs(os.path.dirname(logfile), exist_ok=True)
+    with open(logfile, 'w') as log_file:
         for md5_checksum, file_list in hash_map.items():
             log_file.write(md5_checksum + '\n')
             for file in file_list:
@@ -80,7 +45,7 @@ def main():
                                f"- ownedByMe: {file['ownedByMe']} "
                                f"- trashed: {file['trashed']} "
                                f"- md5Checksum: {file['md5Checksum']}\n")
-
+    exit()
     # Loop through the hash map
     # For each file list under a md5Checksum,
     #   if num of files > 1,
@@ -126,9 +91,12 @@ def main():
 
 
 def get_gdrive_api_client():
-    """This function takes Google Developer App client secrets from a file
+    """Takes Google Developer App client secrets from a file
     `credentials.json`, kicks off authorization flow, and creates a `service`
     object for Google Drive API.
+
+    Returns:
+        A client for Google Drive ready to make calls.
     """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
@@ -148,7 +116,63 @@ def get_gdrive_api_client():
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
     service = build('drive', 'v3', credentials=creds)
+
     return service
+
+
+def fetch_gdrive_files(api_client):
+    """Fetches list of files from Google Drive.
+
+    Fetches only files that have md5Checksum. Files that does not have
+    md5checksum: folders, Google Docs, Google Sheets, Google Slides,
+    and other Google Office files. It also excludes files that are not owned
+    by the user or have already been trashed.
+
+    Returns:
+        A dict using files' md5Checksum as the keys. The value for each key
+        is a list of files with same md5Checksum i.e. duplicate files.
+    """
+    hash_map = {}
+    next_page_token = None
+    while True:
+        results = api_client.files().list(
+            # Exclude files without md5Checksum
+            q="mimeType!='application/vnd.google-apps.folder' and "
+              "mimeType!='application/vnd.google-apps.spreadsheet' and "
+              "mimeType!='application/vnd.google-apps.presentation' and "
+              "mimeType!='application/vnd.google-apps.document' and "
+              "mimeType!='application/vnd.google-apps.form' and "
+              "mimeType!='application/vnd.google-apps.drive-sdk.810194666617' and "
+              "mimeType!='application/vnd.google-apps.site' and "
+              "mimeType!='application/vnd.google-apps.earth' and "
+              "mimeType!='application/vnd.google-apps.drawing' and "
+              "mimeType!='application/vnd.google-apps.jam' and "
+              "trashed=false",
+            pageSize=MAX_PAGE_SIZE,
+            pageToken=next_page_token,
+            fields=f"nextPageToken, files({FILE_FIELDS})"
+        ).execute()
+
+        next_page_token = results.get('nextPageToken', None)
+        logger.info(f'next_page_token: {next_page_token}')
+        files = results.get('files', [])
+        if not files:
+            logger.info('No files found.')
+        else:
+            for file in files:
+                if (file.get('md5Checksum') is not None and
+                        file.get('trashed') is False and
+                        file.get('ownedByMe') is True):
+                    md5_checksum = file['md5Checksum']
+                    file_list = hash_map.get(md5_checksum)
+                    if file_list is None:
+                        hash_map[md5_checksum] = [file]
+                    else:
+                        file_list.append(file)
+        if next_page_token is None:
+            break
+
+    return hash_map
 
 
 if __name__ == '__main__':
