@@ -153,11 +153,15 @@ def remove_duplicates_from_gdrive(api_client, hash_map):
         for file in file_list:
             if file.get(TO_REMOVE) is True:
                 logger.info(f'Trashing file: {file}')
-                result = api_client.files().update(fileId=file['id'],
-                                                   body={'trashed': True}
-                                                   ).execute()
-                logger.info(f'Trashing file done - response: {result}')
-                file[REMOVED] = True
+                try:
+                    result = api_client.files().update(fileId=file['id'],
+                                                       body={'trashed': True}
+                                                       ).execute()
+                except HttpError:
+                    logger.exception('Trashing file failed!')
+                else:
+                    logger.info(f'Trashing file done - response: {result}')
+                    file[REMOVED] = True
 
 
 def _mark_duplicates(hash_map):
