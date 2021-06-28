@@ -211,12 +211,7 @@ def _produce_report(hash_map, report_file):
         for md5_checksum, file_list in hash_map.items():
             f.write(f"md5Checksum: {md5_checksum}\n")
             for file in file_list:
-                f.write(f"\tName: {file['name']} "
-                        f"- modifiedTime: {file['modifiedTime']} "
-                        f"- ID: {file['id']} "
-                        f"- ownedByMe: {file['ownedByMe']} "
-                        f"- trashed: {file['trashed']} "
-                        f"- md5Checksum: {file['md5Checksum']}\n")
+                f.write(f"{file}\n")
 
 
 if __name__ == '__main__':
