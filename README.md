@@ -15,14 +15,10 @@ Your data is totally safe because
 Basically, what we are doing here is that we are createing a Google Drive App for our own use.
 As far as I know, there is no such way that we just enable API access for our Google Drive and then, use some OAuth token to make APIs calls.
 
-### Google Drive API Relationship Diagram
-![This diagram shows the relationship between your Google Drive app, Google Drive, and Google Drive API](resources/google_drive_api_relationship_diagram.png?raw=true "Title")
+Please read [Google Account Setup](/resources/Google_Account_Setup.md) readme file for the details.
 
-### Creat a Google developer project and Enable Google Drive API for it
-Refer https://developers.google.com/drive/api/v3/enable-drive-api
-
-### Set up authentication
-Refer https://developers.google.com/drive/api/v3/about-auth
+After successful setup, you will have OAuth credentials saved in a file named `credentials.json`. 
+We need this file later.
 
 ## Prerequisite: Program Execution Environment
 Before you begin, ensure you have met the following requirements:
@@ -35,10 +31,21 @@ To install Google Drive Duplicate Files Remover, follow these steps:
 ```shell
 git clone git@github.com:TimeInvestor/gdrive-duplicate-remover.git
 ```
+
+**(optional) Configure Python virtual environment**
+
+If you want to use Python virtual environment for the project, please do so.
+> If you want to learn more about Python virtual environment, you could refer to https://realpython.com/python-virtual-environments-a-primer/.
+
 **Install required Python libraries**
 ```shell
+cd gdrive-duplicate-remover
 pip install google-api-python-client
 ```
+
+## Configuration
+We need access (OAuth 2.0) credentials for the code to call Google Drive API. 
+So put your saved `credentials.json` file at the root of the project folder.
 
 ## Using Google Drive Duplicate Files Remover
 
